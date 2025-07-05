@@ -1,3 +1,4 @@
+using OrderGenerator.Fix;
 using OrderGenerator.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);

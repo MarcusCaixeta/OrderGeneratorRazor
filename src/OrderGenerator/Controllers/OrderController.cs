@@ -1,7 +1,6 @@
 
 using Microsoft.AspNetCore.Mvc;
 using OrderGenerator.Models;
-using OrderGenerator.Fix;
 using OrderGenerator.Interfaces;
 
 namespace OrderGenerator.Controllers

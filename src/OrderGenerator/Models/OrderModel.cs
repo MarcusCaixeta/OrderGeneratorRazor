@@ -6,10 +6,10 @@ namespace OrderGenerator.Models
     public class OrderModel
     {
         [Required]
-        public string Symbol { get; set; }
+        public string? Symbol { get; set; }
 
         [Required]
-        public string Side { get; set; }
+        public string? Side { get; set; }
 
         [Required]
         public int Quantity { get; set; }
