@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("OrderGenerator")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c7511e473b34647529c5d69dc46752f29e99382e")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ad01f7832dc79598e88fe949889c80c85cfec6f6")]
 [assembly: System.Reflection.AssemblyProductAttribute("OrderGenerator")]
 [assembly: System.Reflection.AssemblyTitleAttribute("OrderGenerator")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
