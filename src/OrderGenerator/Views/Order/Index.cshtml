@@ -1,0 +1,26 @@
+
+@model OrderGenerator.Models.OrderModel
+
+<form method="post">
+    <label>Símbolo:</label>
+    <select asp-for="Symbol" class="form-control">
+        <option>PETR4</option>
+        <option>VALE3</option>
+        <option>VIIA4</option>
+    </select>
+    <label>Lado:</label>
+    <select asp-for="Side" class="form-control">
+        <option>Compra</option>
+        <option>Venda</option>
+    </select>
+    <label>Quantidade:</label>
+    <input asp-for="Quantity" class="form-control" />
+    <label>Preço:</label>
+    <input asp-for="Price" class="form-control" />
+    <button type="submit">Enviar Ordem</button>
+</form>
+
+@if (ViewBag.Resposta != null)
+{
+    <div class="alert alert-info mt-3">@ViewBag.Resposta</div>
+}
