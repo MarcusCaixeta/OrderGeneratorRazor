@@ -2,6 +2,7 @@
 using OrderGenerator.Models;
 using QuickFix;
 using QuickFix.Fields;
+using QuickFix.FIX44;
 using QuickFix.Logger;
 using QuickFix.Store;
 using QuickFix.Transport;
@@ -12,13 +13,17 @@ namespace OrderGenerator.Fix
     {
         private SessionID? _sessionID;
         private TaskCompletionSource<string>? _responseTcs;
+        private TaskCompletionSource<bool>? _logonTcs;
 
-        public string SendOrder(OrderModel model)
+        public async Task<string> SendOrder(OrderModel model)
         {
+            _logonTcs = new TaskCompletionSource<bool>();
             using var initiator = CreateFixSession();
 
             initiator.Start();
-            Thread.Sleep(1000);
+
+            if (!await _logonTcs.Task.WaitAsync(TimeSpan.FromSeconds(5)))
+                return "Timeout during FIX logon.";
 
             var order = BuildOrder(model);
 
@@ -27,7 +32,7 @@ namespace OrderGenerator.Fix
 
             Session.SendToTarget(order, _sessionID);
 
-            return WaitForExecutionResponse();
+            return await WaitForExecutionResponseAsync();
         }
 
         private SocketInitiator CreateFixSession()
@@ -47,8 +52,12 @@ namespace OrderGenerator.Fix
             var transactTime = new TransactTime(DateTime.UtcNow);
             var ordType = new OrdType(OrdType.LIMIT);
 
-            var order = new QuickFix.FIX44.NewOrderSingle(clOrdId, new Symbol(symbol), new Side(side), transactTime, ordType);
-
+            var order = new NewOrderSingle(clOrdId, new Symbol(symbol), new Side(side), transactTime, ordType)
+            {
+                OrderQty = new OrderQty(model.Quantity),
+                Price = new Price(model.Price),
+                TimeInForce = new TimeInForce(TimeInForce.DAY)
+            };
             order.Set(new OrderQty(model.Quantity));
             order.Set(new Price(model.Price));
             order.Set(new TimeInForce(TimeInForce.DAY));
@@ -56,15 +65,18 @@ namespace OrderGenerator.Fix
             return order;
         }
 
-        private string WaitForExecutionResponse()
+        private async Task<string> WaitForExecutionResponseAsync()
         {
             _responseTcs = new TaskCompletionSource<string>();
 
-            if (_responseTcs.Task.Wait(5000))
-                return _responseTcs.Task.Result;
+            var completedTask = await Task.WhenAny(_responseTcs.Task, Task.Delay(5000));
+
+            if (completedTask == _responseTcs.Task)
+                return await _responseTcs.Task;
 
             return "Timeout ExecutionReport.";
         }
+
 
         public void OnMessage(QuickFix.FIX44.ExecutionReport report, SessionID sessionID)
         {
@@ -80,11 +92,16 @@ namespace OrderGenerator.Fix
 
         // IApplication lifecycle
         public void OnCreate(SessionID sessionID) => _sessionID = sessionID;
-        public void OnLogon(SessionID sessionID) => _sessionID = sessionID;
+
+        public void OnLogon(SessionID sessionID)
+        {
+            _sessionID = sessionID;
+            _logonTcs?.TrySetResult(true); 
+        }
         public void OnLogout(SessionID sessionID) { }
-        public void ToAdmin(Message message, SessionID sessionID) { }
-        public void FromAdmin(Message message, SessionID sessionID) { }
-        public void ToApp(Message message, SessionID sessionID) => Console.WriteLine(" Sent: " + message);
-        public void FromApp(Message message, SessionID sessionID) => Crack(message, sessionID);
+        public void ToAdmin(QuickFix.Message message, SessionID sessionID) { }
+        public void FromAdmin(QuickFix.Message message, SessionID sessionID) { }
+        public void ToApp(QuickFix.Message message, SessionID sessionID) => Console.WriteLine(" Sent: " + message);
+        public void FromApp(QuickFix.Message message, SessionID sessionID) => Crack(message, sessionID);
     }
 }

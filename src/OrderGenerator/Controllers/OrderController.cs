@@ -21,12 +21,12 @@ namespace OrderGenerator.Controllers
         }
 
         [HttpPost]
-        public IActionResult Index(OrderModel model)
+        public async Task<IActionResult> Index(OrderModel model)
         {
             if (!ModelState.IsValid)
                 return View(model);
 
-            string resposta = _fixClient.SendOrder(model);
+            string resposta = await _fixClient.SendOrder(model);
             ViewBag.Resposta = resposta;
             return View();
         }

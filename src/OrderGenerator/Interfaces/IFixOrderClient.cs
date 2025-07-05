@@ -4,6 +4,6 @@ namespace OrderGenerator.Interfaces
 {
     public interface IFixOrderClient
     {
-        string SendOrder(OrderModel model);
+        Task<string> SendOrder(OrderModel model);
     }
 }

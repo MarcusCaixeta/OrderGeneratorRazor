@@ -68,3 +68,4 @@ dist/
 
 # Ignore generated EF Migrations snapshots (optional)
 *Migrations/Snapshot.cs
+/src/OrderGenerator/store
