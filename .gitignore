@@ -1,9 +1,70 @@
 ﻿################################################################################
-# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+# .NET + Visual Studio + Clean Architecture
 ################################################################################
 
-/.vs/
-/obj/
-/bin/
+# IDEs
+.vscode/
+.vs/
 
+# Build outputs
+bin/
+obj/
+out/
+TestResults/
+TestResult.xml
 
+# Publish
+publish/
+artifacts/
+*.dbmdl
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Package manager
+*.nupkg
+*.snupkg
+packages/
+.nuget/
+
+# Logs / crash dumps
+*.log
+*.tlog
+*.pidb
+*.svclog
+*.sdf
+
+# Dotnet tools
+tools/
+
+# Rider / JetBrains
+.idea/
+*.DotSettings.user
+
+# Global config (optional)
+Directory.Build.props
+Directory.Build.targets
+
+# Mac / Linux / Windows
+.DS_Store
+Thumbs.db
+
+# Coverage / test tools
+coverage/
+coverage.cobertura.xml
+coverage.opencover.xml
+*.coverage
+*.coveragexml
+*.code-workspace
+
+# Others (Node if frontend integrado)
+node_modules/
+dist/
+.env
+.env.*
+
+# Ignore generated EF Migrations snapshots (optional)
+*Migrations/Snapshot.cs
