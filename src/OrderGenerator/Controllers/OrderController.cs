@@ -1,7 +1,7 @@
 
 using Microsoft.AspNetCore.Mvc;
-using OrderGenerator.Models;
-using OrderGenerator.Interfaces;
+using OrderGenerator.Contracts.Interfaces;
+using OrderGenerator.Contracts.Models;
 
 namespace OrderGenerator.Controllers
 {
@@ -24,7 +24,10 @@ namespace OrderGenerator.Controllers
         public async Task<IActionResult> Index(OrderModel model)
         {
             if (!ModelState.IsValid)
+            {
+                ViewBag.Resposta = "Preencha corretamente os campos abaixo.";
                 return View(model);
+            }
 
             string resposta = await _fixClient.SendOrder(model);
             ViewBag.Resposta = resposta;

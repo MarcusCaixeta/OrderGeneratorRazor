@@ -1,5 +1,8 @@
-using OrderGenerator.Fix;
-using OrderGenerator.Interfaces;
+using OrderGenerator.Infrastructure.Fix;
+using OrderGenerator.Contracts.Interfaces;
+using OrderGenerator.Validators;
+using FluentValidation;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,6 +10,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 
 builder.Services.AddSingleton<IFixOrderClient, FixOrderClient>();
+
+builder.Services.AddControllersWithViews();
+builder.Services.AddValidatorsFromAssemblyContaining<OrderModelValidator>(); 
 
 var app = builder.Build();
 

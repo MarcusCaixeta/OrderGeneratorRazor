@@ -1,11 +1,11 @@
 ﻿using Xunit;
 using Moq;
 using OrderGenerator.Controllers;
-using OrderGenerator.Interfaces;
-using OrderGenerator.Models;
+using OrderGenerator.Contracts.Interfaces;
+using OrderGenerator.Contracts.Models;
 using Microsoft.AspNetCore.Mvc;
 
-namespace OrderGenerator.Tests.Controllers
+namespace OrderGenerator.Tests.WebApp.Controllers
 {
     public class OrderControllerTests
     {
@@ -43,7 +43,7 @@ namespace OrderGenerator.Tests.Controllers
             var controller = new OrderController(mockFixClient.Object);
             controller.ModelState.AddModelError("Symbol", "Required");
 
-            var model = new OrderModel(); // inválido
+            var model = new OrderModel(); 
 
             // Act
             var result = await controller.Index(model) as ViewResult;

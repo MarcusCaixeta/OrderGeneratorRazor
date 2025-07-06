@@ -20,3 +20,85 @@ html {
 body {
   margin-bottom: 60px;
 }
+
+/* Estilo do container principal */
+.container {
+    max-width: 600px;
+    margin: auto;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Cartão do formulário */
+.card {
+    border: none;
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+/* Cabeçalho estilizado */
+.card-header {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+    padding: 1.2rem 1.5rem;
+    border-bottom: none;
+}
+
+/* Rótulos */
+label.form-label {
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+}
+
+/* Inputs e selects */
+.form-control, .form-select {
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    padding: 0.6rem 1rem;
+    font-size: 1rem;
+    transition: border-color 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+}
+
+    .form-control:focus, .form-select:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
+    }
+
+/* Botão de envio */
+button.btn-success {
+    font-size: 1.1rem;
+    padding: 0.7rem;
+    border-radius: 10px;
+    font-weight: bold;
+    background-color: #28a745;
+    border: none;
+    transition: background-color 0.3s ease-in-out;
+}
+
+    button.btn-success:hover {
+        background-color: #218838;
+    }
+
+/* Mensagens */
+.alert-info {
+    background-color: #e7f3fe;
+    border-left: 4px solid #2196F3;
+    color: #0c5460;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    border-left: 4px solid #dc3545;
+    color: #721c24;
+}
+
+/* Validação */
+.text-danger {
+    font-size: 0.9rem;
+}
+
+/* Ícones */
+.bi {
+    vertical-align: middle;
+    margin-right: 0.3rem;
+}
+

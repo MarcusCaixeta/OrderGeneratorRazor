@@ -1,11 +1,10 @@
 ﻿
-using Xunit;
-using OrderGenerator.Fix;
-using OrderGenerator.Models;
+using OrderGenerator.Infrastructure.Fix;
+using OrderGenerator.Contracts.Models;
 using QuickFix.Fields;
 using QuickFix.FIX44;
 
-namespace OrderGenerator.Tests.Fix
+namespace OrderGenerator.Tests.Infrastructure.Fix
 {
     public class FixOrderClientTests
     {
@@ -32,7 +31,7 @@ namespace OrderGenerator.Tests.Fix
             Assert.Equal(Side.BUY, order.GetChar(Tags.Side));
             Assert.Equal(25.55m, order.GetDecimal(Tags.Price));
             Assert.Equal(1000m, order.GetDecimal(Tags.OrderQty));
-            Assert.Equal('0', order.GetChar(Tags.TimeInForce)); 
+            Assert.Equal('0', order.GetChar(Tags.TimeInForce));
 
         }
 
@@ -55,7 +54,7 @@ namespace OrderGenerator.Tests.Fix
             );
 
             var responseField = typeof(FixOrderClient).GetField("_responseTcs", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var tcs = new System.Threading.Tasks.TaskCompletionSource<string>();
+            var tcs = new TaskCompletionSource<string>();
             responseField.SetValue(client, tcs);
 
             // Act
@@ -84,7 +83,7 @@ namespace OrderGenerator.Tests.Fix
             );
 
             var responseField = typeof(FixOrderClient).GetField("_responseTcs", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var tcs = new System.Threading.Tasks.TaskCompletionSource<string>();
+            var tcs = new TaskCompletionSource<string>();
             responseField.SetValue(client, tcs);
 
             // Act

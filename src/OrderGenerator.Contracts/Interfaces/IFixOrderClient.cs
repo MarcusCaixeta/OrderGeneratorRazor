@@ -1,6 +1,6 @@
-﻿using OrderGenerator.Models;
+﻿using OrderGenerator.Contracts.Models;
 
-namespace OrderGenerator.Interfaces
+namespace OrderGenerator.Contracts.Interfaces
 {
     public interface IFixOrderClient
     {

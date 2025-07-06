@@ -1,42 +1,60 @@
-@model OrderGenerator.Models.OrderModel
+@model OrderGenerator.Contracts.Models.OrderModel
 @{
     ViewData["Title"] = "Enviar Ordem";
 }
 
-<div class="container mt-5">
+<div class="container">
     <div class="card shadow-lg rounded-4">
         <div class="card-header bg-primary text-white">
             <h4 class="mb-0"><i class="bi bi-arrow-up-right-circle"></i> Enviar Ordem via FIX</h4>
         </div>
         <div class="card-body">
-            <form method="post">
+
+            @* Bloco de mensagens de erro do ModelState *@
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger">
+                    <ul class="mb-0">
+                        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                        {
+                            <li>@error.ErrorMessage</li>
+                        }
+                    </ul>
+                </div>
+            }
+
+            <form method="post" novalidate>
                 <div class="mb-3">
-                    <label class="form-label">Símbolo:</label>
+                    <label asp-for="Symbol" class="form-label">Símbolo:</label>
                     <select asp-for="Symbol" class="form-select" required>
                         <option value="">Selecione...</option>
                         <option>PETR4</option>
                         <option>VALE3</option>
                         <option>VIIA4</option>
                     </select>
+                    <span asp-validation-for="Symbol" class="text-danger small"></span>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Lado:</label>
+                    <label asp-for="Side" class="form-label">Lado:</label>
                     <select asp-for="Side" class="form-select" required>
                         <option value="">Selecione...</option>
                         <option>Compra</option>
                         <option>Venda</option>
                     </select>
+                    <span asp-validation-for="Side" class="text-danger small"></span>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Quantidade:</label>
-                    <input asp-for="Quantity" class="form-control" type="number" min="1" max="99999" required />
+                    <label asp-for="Quantity" class="form-label">Quantidade:</label>
+                    <input asp-for="Quantity" class="form-control" type="number" required />
+                    <span asp-validation-for="Quantity" class="text-danger small"></span>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Preço:</label>
-                    <input asp-for="Price" class="form-control" type="number" step="0.01" min="0.01" max="999.99" required />
+                    <label asp-for="Price" class="form-label">Preço:</label>
+                    <input asp-for="Price" class="form-control" type="number" step="0.01" required />
+                    <span asp-validation-for="Price" class="text-danger small"></span>
                 </div>
 
                 <button type="submit" class="btn btn-success w-100">
@@ -53,3 +71,9 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
