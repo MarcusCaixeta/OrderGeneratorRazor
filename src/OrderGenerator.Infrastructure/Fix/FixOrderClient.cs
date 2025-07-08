@@ -1,131 +1,157 @@
 ﻿using OrderGenerator.Contracts.Interfaces;
 using OrderGenerator.Contracts.Models;
-using QuickFix;
 using QuickFix.Fields;
 using QuickFix.FIX44;
 using QuickFix.Logger;
 using QuickFix.Store;
 using QuickFix.Transport;
+using QuickFix;
 
-namespace OrderGenerator.Infrastructure.Fix
+public class FixOrderClient : MessageCracker, IApplication, IFixOrderClient
 {
-    public class FixOrderClient : MessageCracker, IApplication, IFixOrderClient
-    {
-        private SessionID? _sessionID;
-        private TaskCompletionSource<string>? _responseTcs;
-        private TaskCompletionSource<bool>? _logonTcs;
+    private readonly IFixSessionManager _sessionManager;
+    private TaskCompletionSource<string>? _responseTcs;
+    private readonly IInitiator _initiator;
 
-        public async Task<string> SendOrder(OrderModel model)
+    public FixOrderClient(IFixConfigProvider configProvider, IFixSessionManager sessionManager)
+    {
+        _sessionManager = sessionManager;
+
+        var settingsPath = configProvider.GetConfigFilePath();
+        if (!File.Exists(settingsPath))
+            throw new FileNotFoundException($"FIX config file not found at {settingsPath}");
+
+        var settings = new SessionSettings(settingsPath);
+        var storeFactory = new FileStoreFactory(settings);
+        var logFactory = new FileLogFactory(settings);
+
+        _initiator = new SocketInitiator(this, storeFactory, settings, logFactory);
+        _initiator.Start();
+    }
+
+    protected FixOrderClient() { }
+
+    public async Task<string> SendOrder(OrderModel model)
+    {
+        const int maxRetries = 3;
+        const int timeout = 5000;
+
+        for (int attempt = 1; attempt <= maxRetries; attempt++)
         {
             try
             {
-                InitializeLogonAwaiter();
+                if (!TryGetActiveSession(out var session))
+                    return "Erro: SessionID FIX nulo.";
 
-                using var initiator = CreateFixSession();
-                initiator.Start();
+                EnsureLoggedOn(session);
 
-                if (!await WaitForLogonAsync())
-                    return "Timeout during FIX logon.";
+                if (!await _sessionManager.WaitForLogonAsync(timeout))
+                {
+                    RetryLater(attempt, "logon não estabelecido.");
+                    continue;
+                }
 
-                if (_sessionID is null)
-                    return "FIX session ID is null.";
+                if (!TrySendOrder(model, session, out var sendError))
+                    return FormatError(attempt, sendError);
 
-                var order = BuildOrder(model);
-                SendToFix(order);
+                if (await WaitForResponse(timeout))
+                    return await _responseTcs!.Task;
 
-                return await WaitForExecutionResponseAsync();
+                return FormatError(attempt, "timeout aguardando resposta.");
+            }
+            catch (SessionNotFound ex)
+            {
+                RetryLater(attempt, $"sessão não encontrada. {ex.Message}");
             }
             catch (Exception ex)
             {
-                return $"Erro ao enviar Order: {ex.Message}";
+                return FormatError(attempt, $"erro inesperado. {ex.Message}");
             }
         }
 
-        private void InitializeLogonAwaiter()
-        {
-            _logonTcs = new TaskCompletionSource<bool>();
-        }
-
-        private async Task<bool> WaitForLogonAsync()
-        {
-            var timeout = TimeSpan.FromSeconds(5);
-            var resultTask = await Task.WhenAny(_logonTcs!.Task, Task.Delay(timeout));
-            return resultTask == _logonTcs.Task && _logonTcs.Task.Result;
-        }
-
-        private void SendToFix(NewOrderSingle order)
-        {
-            if (_sessionID != null)
-                Session.SendToTarget(order, _sessionID);
-        }
-
-        private SocketInitiator CreateFixSession()
-        {
-            var settings = new SessionSettings("Fix/fix.cfg");
-            var storeFactory = new FileStoreFactory(settings);
-            var logFactory = new FileLogFactory(settings);
-
-            return new SocketInitiator(this, storeFactory, settings, logFactory);
-        }
-
-        private static QuickFix.FIX44.NewOrderSingle BuildOrder(OrderModel model)
-        {
-            var symbol = string.IsNullOrWhiteSpace(model.Symbol) ? "PETR4" : model.Symbol;
-            var side = model.Side == "Compra" ? Side.BUY : Side.SELL;
-            var clOrdId = new ClOrdID(Guid.NewGuid().ToString());
-            var transactTime = new TransactTime(DateTime.UtcNow);
-            var ordType = new OrdType(OrdType.LIMIT);
-
-            var order = new NewOrderSingle(clOrdId, new Symbol(symbol), new Side(side), transactTime, ordType)
-            {
-                OrderQty = new OrderQty(model.Quantity),
-                Price = new Price(model.Price),
-                TimeInForce = new TimeInForce(TimeInForce.DAY)
-            };
-            order.Set(new OrderQty(model.Quantity));
-            order.Set(new Price(model.Price));
-            order.Set(new TimeInForce(TimeInForce.DAY));
-
-            return order;
-        }
-
-        private async Task<string> WaitForExecutionResponseAsync()
-        {
-            _responseTcs = new TaskCompletionSource<string>();
-
-            var completedTask = await Task.WhenAny(_responseTcs.Task, Task.Delay(5000));
-
-            if (completedTask == _responseTcs.Task)
-                return await _responseTcs.Task;
-
-            return "Timeout ExecutionReport.";
-        }
-
-
-        public void OnMessage(QuickFix.FIX44.ExecutionReport report, SessionID sessionID)
-        {
-            var result = report.ExecType.Value switch
-            {
-                ExecType.NEW => "Order accepted.",
-                ExecType.REJECTED => " Order rejected.",
-                _ => $" Return: ExecType = {report.ExecType.Value}"
-            };
-
-            _responseTcs?.TrySetResult(result);
-        }
-
-        // IApplication lifecycle
-        public void OnCreate(SessionID sessionID) => _sessionID = sessionID;
-
-        public void OnLogon(SessionID sessionID)
-        {
-            _sessionID = sessionID;
-            _logonTcs?.TrySetResult(true);
-        }
-        public void OnLogout(SessionID sessionID) { }
-        public void ToAdmin(QuickFix.Message message, SessionID sessionID) { }
-        public void FromAdmin(QuickFix.Message message, SessionID sessionID) { }
-        public void ToApp(QuickFix.Message message, SessionID sessionID) => Console.WriteLine(" Sent: " + message);
-        public void FromApp(QuickFix.Message message, SessionID sessionID) => Crack(message, sessionID);
+        return "Erro: número máximo de tentativas excedido.";
     }
+
+    private bool TryGetActiveSession(out Session session)
+    {
+        var sessionID = _sessionManager.CurrentSessionID;
+        session = sessionID != null ? Session.LookupSession(sessionID) : null;
+        return session != null;
+    }
+
+    private void EnsureLoggedOn(Session session)
+    {
+        if (!session.IsLoggedOn)
+            session.Logon();
+    }
+
+    private async void RetryLater(int attempt, string reason)
+    {
+        Console.WriteLine($"Tentativa {attempt}: {reason}");
+        await Task.Delay(1000);
+    }
+
+    private bool TrySendOrder(OrderModel model, Session session, out string error)
+    {
+        var order = BuildOrder(model);
+        _responseTcs = new TaskCompletionSource<string>();
+
+        if (!Session.SendToTarget(order, session.SessionID))
+        {
+            error = "falha ao enviar ordem FIX.";
+            return false;
+        }
+
+        error = string.Empty;
+        return true;
+    }
+
+    private async Task<bool> WaitForResponse(int timeoutMs)
+    {
+        var completed = await Task.WhenAny(_responseTcs!.Task, Task.Delay(timeoutMs));
+        return completed == _responseTcs.Task;
+    }
+
+    private static string FormatError(int attempt, string message)
+        => $"Tentativa {attempt}: {message}";
+
+
+    private static NewOrderSingle BuildOrder(OrderModel model)
+    {
+        var symbol = string.IsNullOrWhiteSpace(model.Symbol) ? "" : model.Symbol;
+        var side = model.Side == "Compra" ? Side.BUY : Side.SELL;
+        var order = new NewOrderSingle(
+            new ClOrdID(Guid.NewGuid().ToString()),
+            new Symbol(symbol),
+            new Side(side),
+            new TransactTime(DateTime.UtcNow),
+            new OrdType(OrdType.LIMIT)
+        );
+
+        order.Set(new OrderQty(model.Quantity));
+        order.Set(new Price(model.Price));
+        order.Set(new TimeInForce(TimeInForce.DAY));
+
+        return order;
+    }
+
+    public void OnMessage(ExecutionReport report, SessionID sessionID)
+    {
+        string result = report.ExecType.Value switch
+        {
+            ExecType.NEW => "Order accepted.",
+            ExecType.REJECTED => "Order rejected.",
+            _ => $"Return: ExecType = {report.ExecType.Value}"
+        };
+
+        _responseTcs?.TrySetResult(result);
+    }
+
+    public void OnCreate(SessionID sessionID) => _sessionManager.SetSessionID(sessionID);
+    public void OnLogon(SessionID sessionID) => _sessionManager.NotifyLogon(sessionID);
+    public void OnLogout(SessionID sessionID) => _sessionManager.NotifyLogout(sessionID);
+    public void ToAdmin(QuickFix.Message message, SessionID sessionID) { }
+    public void FromAdmin(QuickFix.Message message, SessionID sessionID) { }
+    public void ToApp(QuickFix.Message message, SessionID sessionID) => Console.WriteLine("Sent: " + message);
+    public void FromApp(QuickFix.Message message, SessionID sessionID) => Crack(message, sessionID);
 }

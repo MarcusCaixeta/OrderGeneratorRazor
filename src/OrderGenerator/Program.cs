@@ -9,6 +9,11 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
+builder.Services.AddSingleton<IFixConfigProvider>(
+    new FileFixConfigProvider(Path.Combine("FixConfiguration", "fix.cfg"))
+);
+builder.Services.AddSingleton<IFixSessionManager, FixSessionManager>();
+
 builder.Services.AddSingleton<IFixOrderClient, FixOrderClient>();
 
 builder.Services.AddControllersWithViews();

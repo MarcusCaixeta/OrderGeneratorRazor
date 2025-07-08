@@ -28,7 +28,7 @@
                     <label asp-for="Symbol" class="form-label">Símbolo:</label>
                     <select asp-for="Symbol" class="form-select" required>
                         <option value="">Selecione...</option>
-                        <option>PETR4</option>
+                        <option>PETR4</option> 
                         <option>VALE3</option>
                         <option>VIIA4</option>
                     </select>
@@ -57,8 +57,9 @@
                     <span asp-validation-for="Price" class="text-danger small"></span>
                 </div>
 
-                <button type="submit" class="btn btn-success w-100">
-                    <i class="bi bi-send-check"></i> Enviar Ordem
+                <button id="submitBtn" class="btn btn-success w-100" type="submit">
+                    <span id="btnText"><i class="bi bi-send-check"></i> Enviar Ordem</span>
+                    <span id="btnSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
                 </button>
             </form>
 
@@ -71,6 +72,30 @@
         </div>
     </div>
 </div>
+
+<script>
+    document.querySelector("form").addEventListener("submit", (e) => {
+        e.preventDefault(); // impede o envio imediato
+
+        const form = e.target;
+        const btn = document.getElementById("submitBtn");
+        const text = document.getElementById("btnText");
+        const spinner = document.getElementById("btnSpinner");
+
+        if (!form.checkValidity()) {
+            form.reportValidity(); // mostra os erros nativos
+            return; // não continua
+        }
+
+        // Se chegou aqui, o formulário é válido
+        btn.disabled = true;
+        text.innerHTML = "Enviando...";
+        spinner.classList.remove("d-none");
+
+        form.submit(); // envia de fato
+    });
+</script>
+
 
 @section Scripts {
     @{
