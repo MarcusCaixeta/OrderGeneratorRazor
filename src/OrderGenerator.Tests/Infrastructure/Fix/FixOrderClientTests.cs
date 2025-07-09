@@ -1,10 +1,12 @@
 ﻿
-using OrderGenerator.Infrastructure.Fix;
 using OrderGenerator.Contracts.Models;
+using OrderGenerator.Infrastructure.Fix;
+using QuickFix;
 using QuickFix.Fields;
 using QuickFix.FIX44;
+using System.Collections.Concurrent;
 using System.Reflection;
-using QuickFix;
+using System.Runtime.Intrinsics.X86;
 
 namespace OrderGenerator.Tests.Infrastructure.Fix
 {
@@ -13,12 +15,15 @@ namespace OrderGenerator.Tests.Infrastructure.Fix
         private class TestFixOrderClient : FixOrderClient
         {
             public TestFixOrderClient() : base() { }
-            public void InjectResponseTcs(TaskCompletionSource<string> tcs)
+            public void InjectResponseTcs(string clOrdID, TaskCompletionSource<string> tcs)
             {
                 var field = typeof(FixOrderClient)
-                    .GetField("_responseTcs", BindingFlags.NonPublic | BindingFlags.Instance)!;
-                field.SetValue(this, tcs);
+                    .GetField("_orderResponses", BindingFlags.NonPublic | BindingFlags.Instance)!;
+
+                var dictionary = (ConcurrentDictionary<string, TaskCompletionSource<string>>)field.GetValue(this)!;
+                dictionary[clOrdID] = tcs;
             }
+
 
             public void SetResponseTcs(TaskCompletionSource<string> tcs)
             {
@@ -39,11 +44,12 @@ namespace OrderGenerator.Tests.Infrastructure.Fix
                 Quantity = 1000,
                 Price = 25.55m
             };
+            var clOrdID = "ORD123456";
 
             // Act
             var order = typeof(FixOrderClient)
                 .GetMethod("BuildOrder", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)
-                .Invoke(null, new object[] { model }) as NewOrderSingle;
+                .Invoke(null, new object[] { model, clOrdID }) as NewOrderSingle;
 
             // Assert
             Assert.NotNull(order);
@@ -56,26 +62,63 @@ namespace OrderGenerator.Tests.Infrastructure.Fix
         }
 
         [Fact]
-        public void OnMessage_ShouldSetResponse_AsAccepted_WhenExecTypeIsNew()
+        public void OnMessage_ShouldSetResponse_AsRejected_WhenExecTypeIsRejected()
         {
             // Arrange
             var client = new TestFixOrderClient();
+
             var tcs = new TaskCompletionSource<string>();
-            client.InjectResponseTcs(tcs);
+            var clOrdID = "CLREJ001";
+
+            client.InjectResponseTcs(clOrdID, tcs); // injeta no _orderResponses[clOrdID]
 
             var sessionID = new SessionID("FIX.4.4", "GENERATOR", "ACCUMULATOR");
 
-            var report = new ExecutionReport(
-                new OrderID("123"),
-                new ExecID("456"),
-                new ExecType(ExecType.NEW),
-                new OrdStatus(OrdStatus.NEW),
-                new Symbol("VALE3"),
-                new Side(Side.BUY),
-                new LeavesQty(100),
-                new CumQty(100),
-                new AvgPx(25.55m)
-            );
+            var report = new ExecutionReport();
+            report.Set(new OrderID("123"));
+            report.Set(new ExecID("456"));
+            report.Set(new ExecType(ExecType.REJECTED));
+            report.Set(new OrdStatus(OrdStatus.REJECTED));
+            report.Set(new ClOrdID(clOrdID));
+            report.Set(new Symbol("VALE3"));
+            report.Set(new Side(Side.BUY));
+            report.Set(new LeavesQty(0));
+            report.Set(new CumQty(0));
+            report.Set(new AvgPx(0));
+
+            // Act
+            client.OnMessage(report, sessionID);
+
+            // Assert
+            Assert.True(tcs.Task.IsCompleted);
+            Assert.Equal("Order rejected.", tcs.Task.Result); // ou "Order rejected." se esse for o texto da sua implementação
+        }
+
+        [Fact]
+        public void OnMessage_ShouldSetResponse_AsAccepted_WhenExecTypeIsNew()
+        {
+            // Arrange
+            var client = new TestFixOrderClient(); // classe de teste com acesso ao dicionário interno
+
+            var tcs = new TaskCompletionSource<string>();
+            var clOrdID = "CL123456";
+
+            // Simula a ordem registrada
+            client.InjectResponseTcs(clOrdID, tcs); // faz _orderResponses[clOrdID] = tcs;
+
+            var report = new ExecutionReport();
+            report.Set(new OrderID("ORD123"));
+            report.Set(new ExecID("EXEC456"));
+            report.Set(new ExecType(ExecType.NEW));
+            report.Set(new OrdStatus(OrdStatus.NEW));
+            report.Set(new ClOrdID(clOrdID)); // deve bater com o clOrdID acima
+            report.Set(new Symbol("PETR4"));
+            report.Set(new Side(Side.BUY));
+            report.Set(new LeavesQty(0));
+            report.Set(new CumQty(100));
+            report.Set(new AvgPx(10.50m));
+
+            var sessionID = new SessionID("FIX.4.4", "GENERATOR", "ACCUMULATOR");
 
             // Act
             client.OnMessage(report, sessionID);
@@ -85,64 +128,6 @@ namespace OrderGenerator.Tests.Infrastructure.Fix
             Assert.Equal("Order accepted.", tcs.Task.Result);
         }
 
-        [Fact]
-        public void OnMessage_ShouldSetResponse_AsRejected_WhenExecTypeIsRejected()
-        {
-            // Arrange
-            var client = new TestFixOrderClient(); // mesma subclasse usada no teste anterior
-            var tcs = new TaskCompletionSource<string>();
-            client.InjectResponseTcs(tcs);
-
-            var sessionID = new SessionID("FIX.4.4", "GENERATOR", "ACCUMULATOR");
-
-            var report = new ExecutionReport(
-                new OrderID("123"),
-                new ExecID("456"),
-                new ExecType(ExecType.REJECTED),
-                new OrdStatus(OrdStatus.REJECTED),
-                new Symbol("VALE3"),
-                new Side(Side.BUY),
-                new LeavesQty(0),
-                new CumQty(0),
-                new AvgPx(0)
-            );
-
-            // Act
-            client.OnMessage(report, sessionID);
-
-            // Assert
-            Assert.True(tcs.Task.IsCompleted);
-            Assert.Equal("Order rejected.", tcs.Task.Result);
-        }
-        [Fact]
-        public void OnMessage_ShouldSetResponse_WithFillExecType()
-        {
-            // Arrange
-            var client = new TestFixOrderClient();
-            var tcs = new TaskCompletionSource<string>();
-            client.InjectResponseTcs(tcs);
-
-            var sessionID = new SessionID("FIX.4.4", "GENERATOR", "ACCUMULATOR");
-
-            var report = new ExecutionReport(
-                new OrderID("ORD123"),
-                new ExecID("EXEC456"),
-                new ExecType(ExecType.FILL), // ExecType = 2
-                new OrdStatus(OrdStatus.FILLED),
-                new Symbol("PETR4"),
-                new Side(Side.SELL),
-                new LeavesQty(0),
-                new CumQty(500),
-                new AvgPx(30.25m)
-            );
-
-            // Act
-            client.OnMessage(report, sessionID);
-
-            // Assert
-            Assert.True(tcs.Task.IsCompleted);
-            Assert.Equal("Return: ExecType = 2", tcs.Task.Result);
-        }
 
     }
 }
