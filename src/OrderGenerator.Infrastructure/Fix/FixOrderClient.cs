@@ -6,12 +6,16 @@ using QuickFix.Logger;
 using QuickFix.Store;
 using QuickFix.Transport;
 using QuickFix;
+using System.Collections.Concurrent;
 
 public class FixOrderClient : MessageCracker, IApplication, IFixOrderClient
 {
     private readonly IFixSessionManager _sessionManager;
     private TaskCompletionSource<string>? _responseTcs;
     private readonly IInitiator _initiator;
+    private readonly ConcurrentDictionary<string, TaskCompletionSource<string>> _orderResponses
+    = new();
+
 
     public FixOrderClient(IFixConfigProvider configProvider, IFixSessionManager sessionManager)
     {
@@ -47,21 +51,31 @@ public class FixOrderClient : MessageCracker, IApplication, IFixOrderClient
 
                 if (!await _sessionManager.WaitForLogonAsync(timeout))
                 {
-                    RetryLater(attempt, "logon não estabelecido.");
+                    await RetryLater(attempt, "logon não estabelecido.");
                     continue;
                 }
 
-                if (!TrySendOrder(model, session, out var sendError))
+                string clOrdID = GenerateClOrdID();
+                var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+                _orderResponses[clOrdID] = tcs;
+
+                if (!TrySendOrder(model, clOrdID, session, out var sendError))
+                {
+                    _orderResponses.TryRemove(clOrdID, out _);
                     return FormatError(attempt, sendError);
+                }
 
-                if (await WaitForResponse(timeout))
-                    return await _responseTcs!.Task;
+                if (await Task.WhenAny(tcs.Task, Task.Delay(timeout)) == tcs.Task)
+                {
+                    return await tcs.Task;
+                }
 
+                _orderResponses.TryRemove(clOrdID, out _);
                 return FormatError(attempt, "timeout aguardando resposta.");
             }
             catch (SessionNotFound ex)
             {
-                RetryLater(attempt, $"sessão não encontrada. {ex.Message}");
+                await RetryLater(attempt, $"sessão não encontrada. {ex.Message}");
             }
             catch (Exception ex)
             {
@@ -71,6 +85,7 @@ public class FixOrderClient : MessageCracker, IApplication, IFixOrderClient
 
         return "Erro: número máximo de tentativas excedido.";
     }
+
 
     private bool TryGetActiveSession(out Session session)
     {
@@ -85,17 +100,15 @@ public class FixOrderClient : MessageCracker, IApplication, IFixOrderClient
             session.Logon();
     }
 
-    private async void RetryLater(int attempt, string reason)
+    private async Task RetryLater(int attempt, string reason)
     {
         Console.WriteLine($"Tentativa {attempt}: {reason}");
         await Task.Delay(1000);
     }
 
-    private bool TrySendOrder(OrderModel model, Session session, out string error)
+    private bool TrySendOrder(OrderModel model, string clOrdID, Session session, out string error)
     {
-        var order = BuildOrder(model);
-        _responseTcs = new TaskCompletionSource<string>();
-
+        var order = BuildOrder(model, clOrdID); // Inclua o ClOrdID no FIX Message
         if (!Session.SendToTarget(order, session.SessionID))
         {
             error = "falha ao enviar ordem FIX.";
@@ -105,6 +118,7 @@ public class FixOrderClient : MessageCracker, IApplication, IFixOrderClient
         error = string.Empty;
         return true;
     }
+
 
     private async Task<bool> WaitForResponse(int timeoutMs)
     {
@@ -116,12 +130,13 @@ public class FixOrderClient : MessageCracker, IApplication, IFixOrderClient
         => $"Tentativa {attempt}: {message}";
 
 
-    private static NewOrderSingle BuildOrder(OrderModel model)
+    private static NewOrderSingle BuildOrder(OrderModel model, string clOrdID)
     {
         var symbol = string.IsNullOrWhiteSpace(model.Symbol) ? "" : model.Symbol;
         var side = model.Side == "Compra" ? Side.BUY : Side.SELL;
+
         var order = new NewOrderSingle(
-            new ClOrdID(Guid.NewGuid().ToString()),
+            new ClOrdID(clOrdID), 
             new Symbol(symbol),
             new Side(side),
             new TransactTime(DateTime.UtcNow),
@@ -135,8 +150,14 @@ public class FixOrderClient : MessageCracker, IApplication, IFixOrderClient
         return order;
     }
 
+
     public void OnMessage(ExecutionReport report, SessionID sessionID)
     {
+        if (!report.IsSetField(Tags.ClOrdID))
+            return;
+
+        var clOrdID = report.GetString(Tags.ClOrdID);
+
         string result = report.ExecType.Value switch
         {
             ExecType.NEW => "Order accepted.",
@@ -144,8 +165,12 @@ public class FixOrderClient : MessageCracker, IApplication, IFixOrderClient
             _ => $"Return: ExecType = {report.ExecType.Value}"
         };
 
-        _responseTcs?.TrySetResult(result);
+        if (_orderResponses.TryRemove(clOrdID, out var tcs))
+        {
+            tcs.TrySetResult(result);
+        }
     }
+
 
     public void OnCreate(SessionID sessionID) => _sessionManager.SetSessionID(sessionID);
     public void OnLogon(SessionID sessionID) => _sessionManager.NotifyLogon(sessionID);
@@ -154,4 +179,9 @@ public class FixOrderClient : MessageCracker, IApplication, IFixOrderClient
     public void FromAdmin(QuickFix.Message message, SessionID sessionID) { }
     public void ToApp(QuickFix.Message message, SessionID sessionID) => Console.WriteLine("Sent: " + message);
     public void FromApp(QuickFix.Message message, SessionID sessionID) => Crack(message, sessionID);
+
+    private string GenerateClOrdID()
+    {
+        return Guid.NewGuid().ToString("N").Substring(0, 12); // ou outra lógica sua
+    }
 }

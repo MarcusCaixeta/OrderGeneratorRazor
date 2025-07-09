@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrderGenerator.Infrastructu
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrderGenerator.Contracts", "src\OrderGenerator.Contracts\OrderGenerator.Contracts.csproj", "{781D2A1A-4BB6-45E7-9395-BE1E93863057}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrderGenerator.LoadTests", "src\OrderGenerator.LoadTests\OrderGenerator.LoadTests.csproj", "{3EEF3D24-F1DD-4617-A472-313196C03F0C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -37,6 +39,10 @@ Global
 		{781D2A1A-4BB6-45E7-9395-BE1E93863057}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{781D2A1A-4BB6-45E7-9395-BE1E93863057}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{781D2A1A-4BB6-45E7-9395-BE1E93863057}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3EEF3D24-F1DD-4617-A472-313196C03F0C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3EEF3D24-F1DD-4617-A472-313196C03F0C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3EEF3D24-F1DD-4617-A472-313196C03F0C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3EEF3D24-F1DD-4617-A472-313196C03F0C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -46,5 +52,6 @@ Global
 		{CB84FB13-AF75-4116-9D40-562E9FF3C329} = {A4488561-3567-4071-81FF-D305C50A97CE}
 		{BF600B83-3A0E-4A35-800D-4B24E63784C5} = {A4488561-3567-4071-81FF-D305C50A97CE}
 		{781D2A1A-4BB6-45E7-9395-BE1E93863057} = {A4488561-3567-4071-81FF-D305C50A97CE}
+		{3EEF3D24-F1DD-4617-A472-313196C03F0C} = {4A0A9F22-4A2C-4EF3-A956-4871D3EF50B6}
 	EndGlobalSection
 EndGlobal
