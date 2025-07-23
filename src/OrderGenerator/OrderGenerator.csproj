@@ -4,6 +4,9 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>e769059e-7553-4287-894c-4ca9191b2b87</UserSecretsId>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <DockerfileContext>..\..</DockerfileContext>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,12 +18,14 @@
 
   <ItemGroup>
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.0.0" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="QuickFIXn.FIX4.4" Version="1.13.0" />
+    <PackageReference Include="RabbitMQ.Client" Version="7.1.2" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\OrderGenerator.Contracts\OrderGenerator.Contracts.csproj" />
-    <ProjectReference Include="..\OrderGenerator.Infrastructure\OrderGenerator.Infrastructure.csproj" />
+    <ProjectReference Include="..\OrderGenerator.WorkService\OrderGenerator.WorkService.csproj" />
   </ItemGroup>
 
 </Project>

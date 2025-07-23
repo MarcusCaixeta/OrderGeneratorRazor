@@ -1,17 +1,21 @@
-
 using Microsoft.AspNetCore.Mvc;
-using OrderGenerator.Contracts.Interfaces;
-using OrderGenerator.Contracts.Models;
+using OrderGenerator.WorkerService.Models;
+using OrderGenerator.WorkerService.Interfaces;
+using QuickFix.Fields;
+
 
 namespace OrderGenerator.Controllers
 {
     public class OrderController : Controller
     {
         private readonly IFixOrderClient _fixClient;
+        private readonly RabbitMqPublisher _publisher;
 
-        public OrderController(IFixOrderClient fixClient)
+
+        public OrderController(IFixOrderClient fixClient, RabbitMqPublisher publisher)
         {
             _fixClient = fixClient;
+            _publisher = publisher;
         }
 
         [HttpGet]
@@ -29,8 +33,9 @@ namespace OrderGenerator.Controllers
                 return View(model);
             }
 
-            string resposta = await _fixClient.SendOrder(model);
-            ViewBag.Resposta = resposta;
+            await _publisher.PublishAsync(model);
+
+            ViewBag.Resposta = "Ordem enfileirada com sucesso";
             return View();
         }
     }

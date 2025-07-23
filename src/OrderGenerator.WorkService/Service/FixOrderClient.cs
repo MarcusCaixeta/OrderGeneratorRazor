@@ -1,14 +1,14 @@
-﻿using OrderGenerator.Contracts.Interfaces;
-using OrderGenerator.Contracts.Models;
-using QuickFix.Fields;
+﻿using QuickFix.Fields;
 using QuickFix.FIX44;
 using QuickFix.Logger;
 using QuickFix.Store;
 using QuickFix.Transport;
 using QuickFix;
 using System.Collections.Concurrent;
+using OrderGenerator.WorkerService.Interfaces;
+using OrderGenerator.WorkerService.Models;
 
-public class FixOrderClient2 : MessageCracker, IApplication, IFixOrderClient
+public class FixOrderClient : MessageCracker, IApplication, IFixOrderClient
 {
     private readonly IFixSessionManager _sessionManager;
     private TaskCompletionSource<string>? _responseTcs;
@@ -17,7 +17,7 @@ public class FixOrderClient2 : MessageCracker, IApplication, IFixOrderClient
     = new();
 
 
-    public FixOrderClient2(IFixConfigProvider configProvider, IFixSessionManager sessionManager)
+    public FixOrderClient(IFixConfigProvider configProvider, IFixSessionManager sessionManager)
     {
         _sessionManager = sessionManager;
 
@@ -33,7 +33,7 @@ public class FixOrderClient2 : MessageCracker, IApplication, IFixOrderClient
         _initiator.Start();
     }
 
-    protected FixOrderClient2() { }
+    protected FixOrderClient() { }
 
     public async Task<string> SendOrder(OrderModel model)
     {

@@ -1,7 +1,7 @@
-using OrderGenerator.Infrastructure.Fix;
-using OrderGenerator.Contracts.Interfaces;
 using OrderGenerator.Validators;
 using FluentValidation;
+using OrderGenerator.WorkerService.Interfaces;
+using OrderGenerator.WorkerService.Service;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,8 +16,12 @@ builder.Services.AddSingleton<IFixSessionManager, FixSessionManager>();
 
 builder.Services.AddSingleton<IFixOrderClient, FixOrderClient>();
 
+builder.Services.AddSingleton<RabbitMqPublisher>();
+
 builder.Services.AddControllersWithViews();
 builder.Services.AddValidatorsFromAssemblyContaining<OrderModelValidator>(); 
+
+
 
 var app = builder.Build();
 
