@@ -16,8 +16,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrderGenerator", "src\Order
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrderGenerator.LoadTests", "src\OrderGenerator.LoadTests\OrderGenerator.LoadTests.csproj", "{3EEF3D24-F1DD-4617-A472-313196C03F0C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrderGenerator.WorkService", "src\OrderGenerator.WorkService\OrderGenerator.WorkService.csproj", "{19BFD8EB-A034-498D-AFDA-CF164DC17AAC}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,10 +34,6 @@ Global
 		{3EEF3D24-F1DD-4617-A472-313196C03F0C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3EEF3D24-F1DD-4617-A472-313196C03F0C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3EEF3D24-F1DD-4617-A472-313196C03F0C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{19BFD8EB-A034-498D-AFDA-CF164DC17AAC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{19BFD8EB-A034-498D-AFDA-CF164DC17AAC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{19BFD8EB-A034-498D-AFDA-CF164DC17AAC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{19BFD8EB-A034-498D-AFDA-CF164DC17AAC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -48,6 +42,5 @@ Global
 		{CF46C8ED-5299-4AEA-892A-53106B3D715D} = {4A0A9F22-4A2C-4EF3-A956-4871D3EF50B6}
 		{CB84FB13-AF75-4116-9D40-562E9FF3C329} = {A4488561-3567-4071-81FF-D305C50A97CE}
 		{3EEF3D24-F1DD-4617-A472-313196C03F0C} = {4A0A9F22-4A2C-4EF3-A956-4871D3EF50B6}
-		{19BFD8EB-A034-498D-AFDA-CF164DC17AAC} = {A4488561-3567-4071-81FF-D305C50A97CE}
 	EndGlobalSection
 EndGlobal

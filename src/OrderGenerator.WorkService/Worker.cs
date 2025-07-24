@@ -9,12 +9,10 @@ public class Worker : BackgroundService
     private IConnection _connection;
     private IChannel _channel;
 
-    private readonly IOrderQueue _orderQueue;
     private readonly IFixOrderClient _fixClient;
 
-    public Worker(IOrderQueue orderQueue, IFixOrderClient fixClient)
+    public Worker( IFixOrderClient fixClient)
     {
-        _orderQueue = orderQueue;
         _fixClient = fixClient;
     }
 

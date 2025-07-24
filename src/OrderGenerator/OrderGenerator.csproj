@@ -4,9 +4,8 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <UserSecretsId>e769059e-7553-4287-894c-4ca9191b2b87</UserSecretsId>
-    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <DockerfileContext>..\..</DockerfileContext>
+    <UserSecretsId>e769059e-7553-4287-894c-4ca9191b2b87</UserSecretsId>  
+  
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,10 +21,6 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="QuickFIXn.FIX4.4" Version="1.13.0" />
     <PackageReference Include="RabbitMQ.Client" Version="7.1.2" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\OrderGenerator.WorkService\OrderGenerator.WorkService.csproj" />
   </ItemGroup>
 
 </Project>

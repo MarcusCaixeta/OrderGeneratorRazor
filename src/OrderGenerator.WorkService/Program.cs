@@ -5,8 +5,6 @@ using OrderGenerator.WorkerService.Service;
 
 var builder = Host.CreateApplicationBuilder(args);
 
-builder.Services.AddSingleton<IOrderQueue, OrderQueue>();
-
 builder.Services.AddSingleton<IFixOrderClient, FixOrderClient>();
 builder.Services.AddSingleton<IFixSessionManager, FixSessionManager>();
 builder.Services.AddSingleton<IFixConfigProvider>(

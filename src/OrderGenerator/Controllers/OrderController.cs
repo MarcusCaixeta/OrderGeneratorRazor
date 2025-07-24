@@ -1,20 +1,16 @@
 using Microsoft.AspNetCore.Mvc;
 using OrderGenerator.WorkerService.Models;
-using OrderGenerator.WorkerService.Interfaces;
-using QuickFix.Fields;
 
 
 namespace OrderGenerator.Controllers
 {
     public class OrderController : Controller
     {
-        private readonly IFixOrderClient _fixClient;
         private readonly RabbitMqPublisher _publisher;
 
 
-        public OrderController(IFixOrderClient fixClient, RabbitMqPublisher publisher)
+        public OrderController( RabbitMqPublisher publisher)
         {
-            _fixClient = fixClient;
             _publisher = publisher;
         }
 
